@@ -17,3 +17,11 @@ export interface FormData {
   host_uri: string;
   recipient_information: RecipientInformation;
 }
+
+export type SigHeaders = {
+  "request-line": string;
+  "x-date": string;
+  "content-type" : string;
+  "content-sha512" : string;
+  "content-length" : string;
+}

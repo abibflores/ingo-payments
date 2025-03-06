@@ -1,8 +1,7 @@
-import crypto from "crypto";
-
 import { getGMTDate } from "@/utils/date";
 import { generateHMACSignature } from "@/utils/hmac";
 import { buildSignatureString } from "@/utils/request";
+import { generateSHA512Base64 } from "@/utils/sha512";
 
 const API_URL = process.env.NEXT_PUBLIC_API as string;
 const USERNAME = process.env.NEXT_PUBLIC_USERNAME as string;
@@ -11,11 +10,10 @@ const CONTENT_TYPE = "application/json";
 
 export async function sendHmacRequest(body: object): Promise<Response> {
   const requestBody = JSON.stringify(body);
-  const contentSha512 = crypto
-    .createHash("sha512")
-    .update(requestBody)
-    .digest("base64");
+  const contentSha512 = generateSHA512Base64(requestBody);
   const date = getGMTDate();
+
+  const contentLength = Buffer.byteLength(requestBody);
 
   const signatureString = buildSignatureString(
     "POST",
@@ -23,7 +21,7 @@ export async function sendHmacRequest(body: object): Promise<Response> {
     date,
     CONTENT_TYPE,
     contentSha512,
-    "398"
+    String(contentLength)
   );
 
   const signature = generateHMACSignature(SECRET, signatureString);
@@ -32,7 +30,7 @@ export async function sendHmacRequest(body: object): Promise<Response> {
     "X-Date": date,
     "content-type": CONTENT_TYPE,
     "content-sha512": contentSha512,
-    "content-length": "398",
+    "content-length": String(contentLength),
     Authorization: `hmac username=\"${USERNAME}\", algorithm=\"hmac-sha512\", request_headers=\"request-line x-date content-type content-sha512 content-length\", signature=\"${signature}\"`,
   };
 
